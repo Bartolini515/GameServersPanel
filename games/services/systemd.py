@@ -1,6 +1,7 @@
 import re
 import subprocess
 from collections.abc import Callable
+from typing import Literal
 
 from games.services.base import (
     ServiceCommandRejected,
@@ -15,24 +16,43 @@ from games.types import ProcessStatus
 UNIT_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.@-]{0,243}\.service$")
 STATUS_TIMEOUT_SECONDS = 2
 ACTION_TIMEOUT_SECONDS = 3
+SYSTEM_SYSTEMCTL_PATH = "/usr/bin/systemctl"
+SYSTEM_SUDO_PATH = "/usr/bin/sudo"
+SYSTEM_UNIT_NAME = "game-vintagestory.service"
 
 
 class SystemdService:
-    """Control configured user units through short systemctl invocations."""
+    """Control configured user units or the fixed system unit."""
 
     def __init__(
         self,
         runner: Callable = subprocess.run,
         status_timeout: int = STATUS_TIMEOUT_SECONDS,
         action_timeout: int = ACTION_TIMEOUT_SECONDS,
+        scope: Literal["user", "system"] = "user",
     ):
+        if scope not in ("user", "system"):
+            raise ValueError("Systemd scope must be 'user' or 'system'.")
         self._runner = runner
         self._status_timeout = status_timeout
         self._action_timeout = action_timeout
+        self._scope = scope
 
     def _validate_unit(self, service: str) -> None:
         if not isinstance(service, str) or not UNIT_NAME_PATTERN.fullmatch(service):
             raise ServiceCommandRejected("Invalid configured systemd unit name.")
+        if self._scope == "system" and service != SYSTEM_UNIT_NAME:
+            raise ServiceCommandRejected("The system backend only supports its configured unit.")
+
+    def _status_command(self) -> list[str]:
+        if self._scope == "system":
+            return [SYSTEM_SYSTEMCTL_PATH, "--system"]
+        return ["systemctl", "--user"]
+
+    def _action_command(self) -> list[str]:
+        if self._scope == "system":
+            return [SYSTEM_SUDO_PATH, "-n", SYSTEM_SYSTEMCTL_PATH, "--system"]
+        return ["systemctl", "--user"]
 
     def _run(self, args: list[str], timeout: int):
         try:
@@ -47,7 +67,9 @@ class SystemdService:
         except subprocess.TimeoutExpired as exc:
             raise ServiceTimeout("The systemd request timed out.") from exc
         except OSError as exc:
-            raise ServiceUnavailable("The systemd manager could not be reached.") from exc
+            raise ServiceUnavailable(
+                "The configured service command could not be reached."
+            ) from exc
         return result
 
     @staticmethod
@@ -66,8 +88,7 @@ class SystemdService:
         self._validate_unit(service)
         result = self._run(
             [
-                "systemctl",
-                "--user",
+                *self._status_command(),
                 "--no-pager",
                 "show",
                 "--property=LoadState",
@@ -114,8 +135,7 @@ class SystemdService:
         self.status(service)
         result = self._run(
             [
-                "systemctl",
-                "--user",
+                *self._action_command(),
                 "--no-ask-password",
                 "--no-block",
                 "--job-mode=fail",

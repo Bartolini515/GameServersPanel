@@ -29,7 +29,7 @@ flowchart LR
     M --> C[Katalog zwalidowanych gier]
     C --> Y[games.yaml]
     M --> S[ServiceBackend]
-    S --> SD[systemctl --user lub atrapa DEBUG]
+    S --> SD[systemctl --user, systemctl --system plus ograniczone sudo -n lub atrapa DEBUG]
     M --> R[Rejestr adapterów]
     R --> G[Protokół gry]
     V --> P[monitoring.system]
@@ -44,7 +44,9 @@ Przeglądarka pobiera status każdej karty i metryki hosta przez osobne żądani
 
 `games.yaml` zawiera mapę `games`. Każdy slug ma `name` i `service`, opcjonalnie `icon` oraz `status` (`type`, `host`, `port`, `timeout_s`). Loader odrzuca zduplikowane klucze, nieznane pola, niepoprawne slugi, nazwy usług, hosty i porty oraz duplikaty jednostek. Walidacja jest uruchamiana również przez Django system checks (`games.E001`). Szablon konfiguracji to [`games.example.yaml`](../games.example.yaml).
 
-`GameManager` oferuje `get_servers`, `get_server`, `start`, `stop`, `restart`, `process_status`, `game_status`. Slug jest wyszukiwany w zwalidowanym katalogu; dopiero potem do backendu trafia nazwa usługi. `ServiceBackend` ma `start`, `stop`, `restart`, `status`. `SystemdService` używa krótkich wywołań `systemctl --user` przez `subprocess.run` z listą argumentów, `shell=False` i timeoutami (2 s dla statusu, 3 s dla akcji). Akcje z `--no-block` zlecają zadanie systemd; stan docelowy jest sprawdzany w kolejnych odczytach. Backend rozróżnia brak jednostki, timeout, niedostępność, odmowę, konflikt i nieprawidłową odpowiedź.
+`GameManager` oferuje `get_servers`, `get_server`, `start`, `stop`, `restart`, `process_status`, `game_status`. Slug jest wyszukiwany w zwalidowanym katalogu; dopiero potem do backendu trafia nazwa usługi. `ServiceBackend` ma `start`, `stop`, `restart`, `status`. `SystemdService` domyślnie używa krótkich wywołań `systemctl --user` przez `subprocess.run` z listą argumentów, `shell=False` i timeoutami (2 s dla statusu, 3 s dla akcji). Akcje z `--no-block` zlecają zadanie systemd; stan docelowy jest sprawdzany w kolejnych odczytach. Backend rozróżnia brak jednostki, timeout, niedostępność, odmowę, konflikt i nieprawidłową odpowiedź.
+
+`SystemdService(scope="system")` jest osobnym, jawnym trybem. Status odczytuje bez podnoszenia uprawnień przez `/usr/bin/systemctl --system`. Start, stop i restart wykonują wyłącznie `sudo -n /usr/bin/systemctl --system --no-ask-password --no-block --job-mode=fail <akcja> game-vintagestory.service`; innej nazwy jednostki backend odrzuca. Reguły `sudoers` wdrożenia muszą dopuścić te trzy polecenia o identycznej kolejności argumentów. To ustawienie nie tworzy jednostki ani reguł `sudoers` i nie przyznaje ogólnego `sudo`.
 
 Stan procesu ma wartości `STOPPED`, `STARTING`, `RUNNING`, `STOPPING`, `FAILED`. Status gry jest niezależny: `ONLINE`, `OFFLINE`, `UNKNOWN`, `UNAVAILABLE` oraz opcjonalne dane, np. gracze i ping. Adaptery są rejestrowane w `games/status/registry.py`. Błąd adaptera daje `UNKNOWN`; brak konfiguracji adaptera nie blokuje akcji i daje `UNAVAILABLE` przy działającym procesie. Przy zatrzymanym lub uszkodzonym procesie widok nie odpytuje protokołu i pokazuje „Nie sprawdzano”.
 
@@ -66,4 +68,4 @@ Wszystkie widoki panelu i fragmentów wymagają sesji; wygasła sesja HTMX powod
 
 ## Zależności zewnętrzne i ograniczenia
 
-Realne sterowanie wymaga dostępnych dla procesu panelu istniejących usług `systemd --user` o nazwach wpisanych w YAML. Panel nie tworzy jednostek ani serwerów. Status protokołu może jeszcze być `UNKNOWN` po przejściu procesu do `RUNNING`, gdy gra nadal się uruchamia. Odczyt `psutil` jest bieżącą próbką; niedostępne metryki są pokazywane jawnie, bez zapisu historii. Produkcyjne proxy i serwer WSGI są poza kodem aplikacji.
+Realne sterowanie wymaga istniejących usług `systemd --user` o nazwach wpisanych w YAML albo wybrania backendu `systemd_system` dla jednostki `game-vintagestory.service` z przygotowanymi uprawnieniami wdrożenia. Panel nie tworzy jednostek ani serwerów. Status protokołu może jeszcze być `UNKNOWN` po przejściu procesu do `RUNNING`, gdy gra nadal się uruchamia. Odczyt `psutil` jest bieżącą próbką; niedostępne metryki są pokazywane jawnie, bez zapisu historii. Produkcyjne proxy i serwer WSGI są poza kodem aplikacji.
