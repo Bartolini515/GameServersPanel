@@ -10,3 +10,4 @@ coverage.xml
 htmlcov/
 docs/superpowers
 static/games/icons/*
+staticfiles/*
