@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import sys
@@ -57,7 +58,7 @@ class LocalEnvTests(TestCase):
 
 
 class EnvironmentBackedSettingsTests(TestCase):
-    def test_system_backend_name_is_read_from_production_environment(self):
+    def test_production_settings_support_https_proxy_and_system_backend(self):
         repository_root = Path(__file__).resolve().parents[1]
         environment = os.environ.copy()
         environment.update(
@@ -66,6 +67,7 @@ class EnvironmentBackedSettingsTests(TestCase):
                 "DEBUG": "false",
                 "GAME_SERVICE_BACKEND": "systemd_system",
                 "ALLOWED_HOSTS": "games.nogonoma.net",
+                "GAME_CONFIG_PATH": str(repository_root / "games.example.yaml"),
             }
         )
 
@@ -73,7 +75,16 @@ class EnvironmentBackedSettingsTests(TestCase):
             [
                 sys.executable,
                 "-c",
-                "from config import settings; print(settings.GAME_SERVICE_BACKEND)",
+                "import json; from config import settings; print(json.dumps({"
+                "'DEBUG': settings.DEBUG, "
+                "'GAME_SERVICE_BACKEND': settings.GAME_SERVICE_BACKEND, "
+                "'ALLOWED_HOSTS': settings.ALLOWED_HOSTS, "
+                "'SESSION_COOKIE_SECURE': settings.SESSION_COOKIE_SECURE, "
+                "'CSRF_COOKIE_SECURE': settings.CSRF_COOKIE_SECURE, "
+                "'SECURE_PROXY_SSL_HEADER': getattr(settings, 'SECURE_PROXY_SSL_HEADER', None), "
+                "'SECURE_SSL_REDIRECT': getattr(settings, 'SECURE_SSL_REDIRECT', False), "
+                "'SECURE_HSTS_SECONDS': getattr(settings, 'SECURE_HSTS_SECONDS', 0)"
+                "}))",
             ],
             cwd=repository_root,
             env=environment,
@@ -84,4 +95,17 @@ class EnvironmentBackedSettingsTests(TestCase):
         )
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.strip().splitlines()[-1], "systemd_system")
+        values = json.loads(result.stdout.strip().splitlines()[-1])
+        self.assertEqual(
+            values,
+            {
+                "DEBUG": False,
+                "GAME_SERVICE_BACKEND": "systemd_system",
+                "ALLOWED_HOSTS": ["games.nogonoma.net"],
+                "SESSION_COOKIE_SECURE": True,
+                "CSRF_COOKIE_SECURE": True,
+                "SECURE_PROXY_SSL_HEADER": ["HTTP_X_FORWARDED_PROTO", "https"],
+                "SECURE_SSL_REDIRECT": True,
+                "SECURE_HSTS_SECONDS": 0,
+            },
+        )

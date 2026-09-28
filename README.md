@@ -57,6 +57,23 @@ Jeżeli konto `panel` już istnieje, ustaw lub zmień jego hasło przez `pipenv 
 
 Uruchom `pipenv run python manage.py runserver`, otwórz `http://127.0.0.1:8000/` i zaloguj się hasłem konta `panel`.
 
+## Produkcyjny WSGI za Nginx
+
+`config.wsgi:application` uruchom przez Gunicorn z katalogu projektu i środowiska Pipenv. Jawne wiązanie do loopback ogranicza dostęp do serwera aplikacji do hosta; nie wystawiaj portu 8000 publicznie.
+
+```text
+pipenv run gunicorn config.wsgi:application --bind 127.0.0.1:8000
+```
+
+Reverse proxy powinno przekazywać host i nadpisywać nagłówek protokołu wartością pochodzącą z własnego połączenia, np. w konfiguracji Nginx:
+
+```nginx
+proxy_set_header Host $host;
+proxy_set_header X-Forwarded-Proto $scheme;
+```
+
+Przy `DEBUG=false` Django ufa `X-Forwarded-Proto` i wymusza HTTPS. To jest bezpieczne tylko wtedy, gdy Gunicorn jest osiągalny wyłącznie lokalnie, a Nginx zawsze nadpisuje nagłówek klienta własnym `$scheme`. Ciasteczka sesji i CSRF mają wtedy flagę Secure. Nginx powinien przekierować HTTP do HTTPS przed przekazaniem żądania do aplikacji. HSTS pozostaje wyłączone, dopóki działający certyfikat i routing HTTPS nie zostaną sprawdzone; nie włączaj `preload` na początku.
+
 ## Konfiguracja gier
 
 `games.yaml` określa slug, nazwę, istniejącą jednostkę `.service`, opcjonalną ikonę i opcjonalne `status` z `type`, `host`, `port`, `timeout_s`. Format pokazuje [szablon](games.example.yaml). Zmiany YAML są odczytywane przy budowie menedżera procesu; po ich edycji uruchom proces Django ponownie. Dodanie prostej gry nie wymaga zmiany kodu, jeśli jej usługa już istnieje.
