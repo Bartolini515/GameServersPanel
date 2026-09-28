@@ -31,12 +31,14 @@ Plik `.env` obsługuje proste linie `NAZWA=wartość`, opcjonalne pojedyncze lub
 |---|---|---|
 | `SECRET_KEY` | Klucz sesji i podpisów Django; wymagany w `.env` lub środowisku procesu | brak |
 | `DEBUG` | Lokalny podgląd i domyślna atrapa przy wartości `true` | `false` |
-| `GAME_SERVICE_BACKEND` | `fake` albo `systemd`; `fake` wymaga `DEBUG=true` | `fake` przy debug, inaczej `systemd` |
+| `GAME_SERVICE_BACKEND` | `fake`, `systemd` albo `systemd_system`; `fake` wymaga `DEBUG=true` | `fake` przy debug, inaczej `systemd` |
 | `GAME_CONFIG_PATH` | Ścieżka do YAML gier | `games.yaml` w katalogu projektu |
 | `MONITOR_DISK_PATH` | Ścieżka systemu plików do pomiaru dysku | katalog główny bieżącego dysku/systemu |
 | `ALLOWED_HOSTS` | Lista hostów Django rozdzielona przecinkami | `localhost,127.0.0.1` |
 
 Przy `DEBUG=true` domyślny `FakeSystemdService` zmienia stany tylko w pamięci procesu panelu. Nie uruchamia serwerów gier; status protokołu może nadal pokazywać `Nieznany`, jeśli żaden serwer nie odpowiada.
+
+Backend `systemd` korzysta z menedżera `systemd --user`. Produkcyjny `systemd_system` odczytuje status bez podnoszenia uprawnień i obsługuje wyłącznie `game-vintagestory.service`; tylko START, STOP i RESTART przechodzą przez `sudo -n` z dokładnymi argumentami opisanymi w [architekturze](docs/architecture.md). Wymaga istniejącej jednostki systemowej uruchamiającej grę na pierwszym planie oraz lokalnych reguł `sudoers` dopuszczających wyłącznie te trzy polecenia. Aplikacja nie tworzy jednostki ani reguł uprawnień.
 
 Przygotuj standardowe tabele Django i wcześniej ustaw hasło zwykłego użytkownika o nazwie `panel`. Aplikacja nie oferuje przepływu tworzenia ani zmiany hasła. Jeśli to pierwsze uruchomienie lokalne, konto można utworzyć w interaktywnym shellu:
 

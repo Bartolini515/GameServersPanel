@@ -16,6 +16,8 @@ def build_game_manager() -> GameManager:
 
     if backend_name == "systemd":
         service_backend = SystemdService()
+    elif backend_name == "systemd_system":
+        service_backend = SystemdService(scope="system")
     elif backend_name == "fake":
         if not settings.DEBUG:
             raise ImproperlyConfigured(
@@ -25,7 +27,9 @@ def build_game_manager() -> GameManager:
             server.service for server in repository.get_servers()
         )
     else:
-        raise ImproperlyConfigured("GAME_SERVICE_BACKEND must be 'systemd' or 'fake'.")
+        raise ImproperlyConfigured(
+            "GAME_SERVICE_BACKEND must be 'systemd', 'systemd_system' or 'fake'."
+        )
 
     return GameManager(repository, service_backend, STATUS_ADAPTERS)
 

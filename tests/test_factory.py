@@ -49,6 +49,13 @@ class GameManagerFactoryTests(TestCase):
     def test_production_backend_is_systemd(self):
         manager = self.build(debug=False, backend="systemd")
         self.assertIsInstance(manager.service_backend, SystemdService)
+        self.assertEqual(manager.service_backend._scope, "user")
+
+    def test_system_service_backend_selects_system_scope(self):
+        manager = self.build(debug=False, backend="systemd_system")
+
+        self.assertIsInstance(manager.service_backend, SystemdService)
+        self.assertEqual(manager.service_backend._scope, "system")
 
     def test_unknown_backend_is_rejected(self):
         with self.assertRaises(ImproperlyConfigured):

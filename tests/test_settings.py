@@ -1,6 +1,9 @@
-from unittest import TestCase
+import os
+import subprocess
+import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest import TestCase
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -51,3 +54,34 @@ class LocalEnvTests(TestCase):
             with self.assertRaises(ImproperlyConfigured) as error:
                 load_local_env(path, {})
         self.assertNotIn("broken-secret-value", str(error.exception))
+
+
+class EnvironmentBackedSettingsTests(TestCase):
+    def test_system_backend_name_is_read_from_production_environment(self):
+        repository_root = Path(__file__).resolve().parents[1]
+        environment = os.environ.copy()
+        environment.update(
+            {
+                "SECRET_KEY": "settings-test-secret",
+                "DEBUG": "false",
+                "GAME_SERVICE_BACKEND": "systemd_system",
+                "ALLOWED_HOSTS": "games.nogonoma.net",
+            }
+        )
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "from config import settings; print(settings.GAME_SERVICE_BACKEND)",
+            ],
+            cwd=repository_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip().splitlines()[-1], "systemd_system")
