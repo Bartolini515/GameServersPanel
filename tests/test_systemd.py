@@ -63,6 +63,99 @@ class SystemdServiceTests(TestCase):
         self.assertIs(kwargs["capture_output"], True)
         self.assertIs(kwargs["text"], True)
 
+    def test_system_scope_status_reads_only_the_system_manager_without_sudo(self):
+        systemd = SystemdService(runner=self.runner, scope="system")
+        self.runner.return_value = properties("inactive", "dead")
+
+        systemd.status("game-vintagestory.service")
+
+        args, kwargs = self.runner.call_args
+        self.assertEqual(
+            args[0],
+            [
+                "/usr/bin/systemctl", "--system", "--no-pager", "show",
+                "--property=LoadState", "--property=ActiveState",
+                "--property=SubState", "--property=MainPID",
+                "game-vintagestory.service",
+            ],
+        )
+        self.assertEqual(kwargs["timeout"], 2)
+        self.assertIs(kwargs["shell"], False)
+        self.assertNotIn("sudo", args[0])
+
+    def test_system_scope_actions_use_exact_noninteractive_sudo_arguments(self):
+        systemd = SystemdService(runner=self.runner, scope="system")
+
+        for action in ("start", "stop", "restart"):
+            with self.subTest(action=action):
+                self.runner.reset_mock()
+                self.runner.side_effect = [
+                    properties("inactive", "dead"),
+                    completed(),
+                ]
+
+                getattr(systemd, action)("game-vintagestory.service")
+
+                self.assertEqual(self.runner.call_count, 2)
+                action_args, action_kwargs = self.runner.call_args_list[1]
+                self.assertEqual(
+                    action_args[0],
+                    [
+                        "/usr/bin/sudo", "-n", "/usr/bin/systemctl",
+                        "--system", "--no-ask-password", "--no-block",
+                        "--job-mode=fail", action, "game-vintagestory.service",
+                    ],
+                )
+                self.assertEqual(action_kwargs["timeout"], 3)
+                self.assertIs(action_kwargs["shell"], False)
+                self.assertEqual(action_kwargs["check"], False)
+
+    def test_system_scope_rejects_invalid_or_other_unit_names(self):
+        systemd = SystemdService(runner=self.runner, scope="system")
+
+        for service in (
+            "game-vintagestory.service;whoami",
+            "game-minecraft.service",
+        ):
+            with self.subTest(service=service):
+                with self.assertRaises(ServiceCommandRejected):
+                    systemd.start(service)
+
+        self.runner.assert_not_called()
+
+    def test_system_action_handles_missing_sudo_denial_and_timeout_safely(self):
+        systemd = SystemdService(runner=self.runner, scope="system")
+
+        self.runner.side_effect = [
+            properties("inactive", "dead"),
+            FileNotFoundError("sudo: command not found"),
+        ]
+        with self.assertRaises(ServiceUnavailable) as missing_sudo:
+            systemd.start("game-vintagestory.service")
+        self.assertNotIn("sudo: command not found", str(missing_sudo.exception))
+
+        self.runner.side_effect = [
+            properties("inactive", "dead"),
+            completed(returncode=1, stderr="sudo: a password is required; private path"),
+        ]
+        with self.assertRaises(ServiceCommandRejected) as denied:
+            systemd.start("game-vintagestory.service")
+        self.assertNotIn("private path", str(denied.exception))
+
+        self.runner.side_effect = [
+            properties("inactive", "dead"),
+            subprocess.TimeoutExpired("/usr/bin/sudo", 3),
+        ]
+        with self.assertRaises(ServiceTimeout):
+            systemd.start("game-vintagestory.service")
+
+    def test_system_active_running_requires_a_positive_main_pid(self):
+        systemd = SystemdService(runner=self.runner, scope="system")
+        self.runner.return_value = properties("active", "running", "0")
+
+        with self.assertRaises(ServiceProtocolError):
+            systemd.status("game-vintagestory.service")
+
     def test_missing_masked_and_malformed_units_raise_typed_errors(self):
         self.runner.return_value = properties("inactive", "dead", load="not-found")
         with self.assertRaises(ServiceNotFound):
