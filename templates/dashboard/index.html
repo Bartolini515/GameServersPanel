@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Serwery · Game Servers Panel{% endblock %}
+
+{% block content %}
+<header class="mb-4">
+  <h1 class="h2 mb-1">Serwery gier</h1>
+  <p class="text-body-secondary mb-0">Zarządzaj dostępnością i sprawdzaj stan maszyn.</p>
+</header>
+
+<section aria-labelledby="host-heading" class="mb-4">
+  <h2 class="h4" id="host-heading">Wykorzystanie hosta</h2>
+  <div id="host-stats-poller"
+       hx-get="{% url 'monitoring:system-stats' %}"
+       hx-trigger="every 5s"
+       hx-target="#host-stats-content"
+       hx-swap="outerHTML"
+       hx-sync="this:drop">
+    {% include "monitoring/_system_stats.html" %}
+  </div>
+</section>
+
+<section aria-labelledby="servers-heading">
+  <h2 class="h4 mb-3" id="servers-heading">Dostępne serwery</h2>
+  <div class="row g-3">
+    {% for card in server_cards %}
+      <div class="col-12 col-md-6 col-xl-4">
+        <div class="server-card-poller"
+             hx-get="{% url 'dashboard:server-status' card.server.slug %}"
+             hx-trigger="every 5s"
+             hx-target="#server-{{ card.server.slug }}-content"
+             hx-swap="outerHTML"
+             hx-sync="this:drop">
+          {% include "dashboard/_server_card.html" with card=card %}
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="alert alert-info" role="status">Brak serwerów w konfiguracji.</div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

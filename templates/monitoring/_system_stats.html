@@ -1,0 +1,31 @@
+{% load monitoring %}
+<div class="card" id="host-stats-content" aria-live="polite">
+  <div class="card-body">
+    <dl class="row mb-0">
+      <dt class="col-7 col-sm-4">CPU</dt>
+      <dd class="col-5 col-sm-8 text-end text-sm-start">{% if stats.cpu_percent != None %}{{ stats.cpu_percent|floatformat:1 }}%{% else %}niedostępne{% endif %}</dd>
+
+      <dt class="col-7 col-sm-4">RAM</dt>
+      <dd class="col-5 col-sm-8 text-end text-sm-start">
+        {{ stats.ram_used_bytes|monitor_bytes }} / {{ stats.ram_total_bytes|monitor_bytes }}
+        {% if stats.ram_percent != None %}({{ stats.ram_percent|floatformat:1 }}%){% else %}(niedostępne){% endif %}
+      </dd>
+
+      <dt class="col-7 col-sm-4">Dysk</dt>
+      <dd class="col-5 col-sm-8 text-end text-sm-start">
+        {{ stats.disk_used_bytes|monitor_bytes }} / {{ stats.disk_total_bytes|monitor_bytes }}
+        {% if stats.disk_percent != None %}({{ stats.disk_percent|floatformat:1 }}%){% else %}(niedostępne){% endif %}
+      </dd>
+
+      <dt class="col-7 col-sm-4">Load average</dt>
+      <dd class="col-5 col-sm-8 text-end text-sm-start">
+        {% if stats.load_average %}
+          {{ stats.load_average.0|floatformat:2 }} / {{ stats.load_average.1|floatformat:2 }} / {{ stats.load_average.2|floatformat:2 }}
+        {% else %}niedostępne{% endif %}
+      </dd>
+
+      <dt class="col-7 col-sm-4">Uptime</dt>
+      <dd class="col-5 col-sm-8 text-end text-sm-start">{{ stats.uptime_seconds|monitor_uptime }}</dd>
+    </dl>
+  </div>
+</div>

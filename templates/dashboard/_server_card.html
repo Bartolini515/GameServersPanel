@@ -1,0 +1,79 @@
+{% load static %}
+<article class="card h-100 server-card-content" id="server-{{ card.server.slug }}-content" aria-labelledby="server-{{ card.server.slug }}-title">
+  <div class="card-body d-flex flex-column">
+    <div class="d-flex align-items-center gap-3 mb-3">
+      {% if card.icon_available %}
+        <img class="rounded" width="48" height="48" loading="lazy" src="{% static 'games/icons/' %}{{ card.server.icon }}" alt="">
+      {% else %}
+        <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-body-secondary fw-bold p-3" aria-hidden="true">{{ card.icon_initial }}</span>
+      {% endif %}
+      <h3 class="h5 mb-0 text-break" id="server-{{ card.server.slug }}-title">{{ card.server.name }}</h3>
+    </div>
+
+    <dl class="row mb-3" aria-live="polite" aria-atomic="true">
+      <dt class="col-6">Proces:</dt>
+      <dd class="col-6 text-end">
+        <span class="badge text-bg-{{ card.process_badge }}">{{ card.process_label }}</span>
+      </dd>
+      <dt class="col-6">Status gry:</dt>
+      <dd class="col-6 text-end">
+        <span class="badge text-bg-{{ card.game_badge }}">{{ card.game_label }}</span>
+      </dd>
+    </dl>
+
+    {% if card.process_error %}
+      <p class="small text-body-secondary" role="status">{{ card.process_error }}</p>
+    {% endif %}
+
+    {% if card.action_message %}
+      <div class="alert alert-{% if card.action_error %}danger{% else %}success{% endif %} py-2" role="status">
+        {{ card.action_message }}
+      </div>
+    {% endif %}
+
+    {% if card.game_status %}
+      {% if card.game_status.players != None and card.game_status.max_players != None %}
+        <p class="mb-2">Gracze: {{ card.game_status.players }} / {{ card.game_status.max_players }}</p>
+      {% endif %}
+      {% if card.game_status.ping_ms != None %}
+        <p class="mb-2">Ping: {{ card.game_status.ping_ms|floatformat:0 }} ms</p>
+      {% endif %}
+      {% if card.game_status.map_name %}
+        <p class="mb-2 text-break">Mapa: {{ card.game_status.map_name }}</p>
+      {% endif %}
+      {% if card.game_status.mission %}
+        <p class="mb-2 text-break">Misja: {{ card.game_status.mission }}</p>
+      {% endif %}
+      {% if card.game_status.server_name %}
+        <p class="mb-2 text-break">{{ card.game_status.server_name }}</p>
+      {% endif %}
+    {% endif %}
+
+    <fieldset class="d-flex flex-wrap gap-2 mt-auto pt-3 border-0 p-0">
+      <legend class="visually-hidden">Sterowanie serwerem {{ card.server.name }}</legend>
+      <form method="post" action="/servers/{{ card.server.slug }}/start/"
+            hx-post="/servers/{{ card.server.slug }}/start/"
+            hx-target="#server-{{ card.server.slug }}-content" hx-swap="outerHTML"
+            hx-disabled-elt="closest fieldset" hx-sync="closest .server-card-poller:replace">
+        {% csrf_token %}
+        <button class="btn btn-success btn-sm" type="submit">START<span class="spinner-border spinner-border-sm htmx-indicator ms-1" aria-hidden="true"></span></button>
+      </form>
+      <form method="post" action="/servers/{{ card.server.slug }}/stop/"
+            hx-post="/servers/{{ card.server.slug }}/stop/"
+            hx-target="#server-{{ card.server.slug }}-content" hx-swap="outerHTML"
+            hx-disabled-elt="closest fieldset" hx-sync="closest .server-card-poller:replace"
+            hx-confirm="Czy zatrzymać serwer {{ card.server.name }}?">
+        {% csrf_token %}
+        <button class="btn btn-outline-danger btn-sm" type="submit">STOP<span class="spinner-border spinner-border-sm htmx-indicator ms-1" aria-hidden="true"></span></button>
+      </form>
+      <form method="post" action="/servers/{{ card.server.slug }}/restart/"
+            hx-post="/servers/{{ card.server.slug }}/restart/"
+            hx-target="#server-{{ card.server.slug }}-content" hx-swap="outerHTML"
+            hx-disabled-elt="closest fieldset" hx-sync="closest .server-card-poller:replace"
+            hx-confirm="Czy zrestartować serwer {{ card.server.name }}?">
+        {% csrf_token %}
+        <button class="btn btn-outline-primary btn-sm" type="submit">RESTART<span class="spinner-border spinner-border-sm htmx-indicator ms-1" aria-hidden="true"></span></button>
+      </form>
+    </fieldset>
+  </div>
+</article>

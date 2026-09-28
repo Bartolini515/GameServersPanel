@@ -1,0 +1,11 @@
+.venv/
+.virtualenv-cache/
+__pycache__/
+*.py[cod]
+db.sqlite3
+games.yaml
+.env
+.pytest_cache/
+coverage.xml
+htmlcov/
+docs/superpowers

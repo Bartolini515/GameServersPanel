@@ -1,0 +1,31 @@
+{% load static %}
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>{% block title %}Game Servers Panel{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap-5.3.8.min.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-body-tertiary">
+  <a class="visually-hidden-focusable position-fixed top-0 start-0 z-3 bg-white text-dark p-3" href="#main-content">Przejdź do treści</a>
+  {% if request.user.is_authenticated %}
+    <nav class="navbar navbar-dark bg-dark mb-4">
+      <div class="container">
+        <a class="navbar-brand" href="/">Game Servers Panel</a>
+        <form method="post" action="{% url 'accounts:logout' %}">
+          {% csrf_token %}
+          <button class="btn btn-outline-light btn-sm" type="submit">Wyloguj</button>
+        </form>
+      </div>
+    </nav>
+  {% endif %}
+  <main class="container py-4" id="main-content" tabindex="-1">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="{% static 'vendor/htmx-2.0.11.min.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

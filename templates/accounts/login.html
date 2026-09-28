@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Logowanie · Game Servers Panel{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center min-vh-100">
+  <div class="col-12 col-sm-9 col-md-6 col-lg-4">
+    <section class="card shadow-sm">
+      <div class="card-body p-4">
+        <h1 class="h3 mb-2">Game Servers Panel</h1>
+        <p class="text-body-secondary mb-4">Wpisz hasło, aby otworzyć panel.</p>
+        <form method="post" action="{% url 'accounts:login' %}">
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+              {{ form.non_field_errors }}
+            </div>
+          {% endif %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+            {{ form.password }}
+            {% for error in form.password.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+            {% endfor %}
+          </div>
+          <button class="btn btn-primary w-100" type="submit">Zaloguj się</button>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

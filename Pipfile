@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+Django = ">=5.2,<5.3"
+PyYAML = ">=6.0,<7"
+psutil = ">=6.0,<8"
+mcstatus = ">=14,<15"
+python-a2s = ">=1.4,<2"
+
+[dev-packages]
+
+[requires]
+python_version = "3.12"
