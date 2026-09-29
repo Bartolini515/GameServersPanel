@@ -4,13 +4,13 @@
 {% block title %}Serwery · Game Servers Panel{% endblock %}
 
 {% block content %}
-<header class="mb-4">
-  <h1 class="h2 mb-1">Serwery gier</h1>
+<header class="page-heading mb-5">
+  <h1 class="mb-2">Serwery gier</h1>
   <p class="text-body-secondary mb-0">Zarządzaj dostępnością i sprawdzaj stan maszyn.</p>
 </header>
 
-<section aria-labelledby="host-heading" class="mb-4">
-  <h2 class="h4" id="host-heading">Wykorzystanie hosta</h2>
+<section aria-labelledby="host-heading" class="mb-5">
+  <h2 class="section-heading" id="host-heading">Wykorzystanie hosta</h2>
   <div id="host-stats-poller"
        hx-get="{% url 'monitoring:system-stats' %}"
        hx-trigger="every 5s"
@@ -22,7 +22,7 @@
 </section>
 
 <section aria-labelledby="servers-heading">
-  <h2 class="h4 mb-3" id="servers-heading">Dostępne serwery</h2>
+  <h2 class="section-heading" id="servers-heading">Dostępne serwery</h2>
   <div class="row g-3">
     {% for card in server_cards %}
       <div class="col-12 col-md-6 col-xl-4">

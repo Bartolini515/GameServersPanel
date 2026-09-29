@@ -35,6 +35,11 @@ class AuthenticationViewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Hasło jest nieprawidłowe")
+        self.assertContains(response, 'class="alert alert-danger text-center login-error"')
+        self.assertNotContains(response, '<ul class="errorlist')
+        page = response.content.decode()
+        self.assertLess(page.index('name="password"'), page.index('class="alert alert-danger text-center login-error"'))
+        self.assertLess(page.index('class="alert alert-danger text-center login-error"'), page.index('type="submit">Zaloguj się'))
         self.assertFalse(response.wsgi_request.user.is_authenticated)
 
     def test_account_with_other_username_cannot_log_in(self):

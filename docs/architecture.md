@@ -16,7 +16,7 @@ Ten dokument opisuje aktualny kod panelu. [Plan implementacji](superpowers/plans
 | Monitoring | Odczyt i normalizacja bieżących metryk hosta | `monitoring/` |
 | Weryfikacja | Testy Django i bezpieczna kontrola repozytorium | `tests/`, `scripts/check.py` |
 
-SQLite przechowuje standardowe dane Django, przede wszystkim konto auth i sesje. Nie ma modeli gry ani historii monitoringu. Definicje gier są w YAML. Ustawienia lokalne pochodzą z ignorowanego przez Git `.env` w katalogu projektu; zmienne środowiska procesu mają pierwszeństwo. Bootstrap i HTMX są dostarczone jako lokalne pliki w `static/vendor/`.
+SQLite przechowuje standardowe dane Django, przede wszystkim konto auth i sesje. Nie ma modeli gry ani historii monitoringu. Definicje gier są w YAML. Ustawienia lokalne pochodzą z ignorowanego przez Git `.env` w katalogu projektu; zmienne środowiska procesu mają pierwszeństwo. Bootstrap i HTMX są dostarczone jako lokalne pliki w `static/vendor/`. Ciemny motyw panelu opiera się na Bootstrap `data-bs-theme="dark"` i wspólnym arkuszu `static/css/panel.css`; ten sam arkusz stylizuje pełne strony i wymieniane fragmenty HTMX.
 
 ## Przepływ danych
 

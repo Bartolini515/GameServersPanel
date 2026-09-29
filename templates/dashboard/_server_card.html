@@ -3,9 +3,9 @@
   <div class="card-body d-flex flex-column">
     <div class="d-flex align-items-center gap-3 mb-3">
       {% if card.icon_available %}
-        <img class="rounded" width="48" height="48" loading="lazy" src="{% static 'games/icons/' %}{{ card.server.icon }}" alt="">
+        <img class="server-icon" width="48" height="48" loading="lazy" src="{% static 'games/icons/' %}{{ card.server.icon }}" alt="">
       {% else %}
-        <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-body-secondary fw-bold p-3" aria-hidden="true">{{ card.icon_initial }}</span>
+        <span class="server-icon server-icon-fallback d-inline-flex align-items-center justify-content-center fw-semibold" aria-hidden="true">{{ card.icon_initial }}</span>
       {% endif %}
       <h3 class="h5 mb-0 text-break" id="server-{{ card.server.slug }}-title">{{ card.server.name }}</h3>
     </div>

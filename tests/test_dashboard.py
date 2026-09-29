@@ -42,6 +42,10 @@ class DashboardPageTests(TestCase):
 
         self.assertContains(response, "vendor/bootstrap-5.3.8.min.css")
         self.assertContains(response, "vendor/htmx-2.0.11.min.js")
+        self.assertContains(response, "css/panel.css")
+        self.assertContains(response, 'data-bs-theme="dark"')
+        self.assertNotContains(response, 'class="brand-mark"')
+        self.assertContains(response, 'class="server-icon server-icon-fallback')
 
     @patch("monitoring.system.psutil.cpu_percent", return_value=12.5)
     def test_dashboard_includes_monitoring_and_polls_it_every_five_seconds(self, _cpu):
